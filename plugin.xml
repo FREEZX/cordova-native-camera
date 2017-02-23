@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-native-camera" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0">
+	<name>NativeCamera</name>
+	<platform name="android">
+		<config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+		</config-file>
+		<js-module name="NativeCamera" src="www/index-android.js">
+			<clobbers target="cordova.plugins.NativeCamera" />
+		</js-module>
+		<dependency id="cordova-plugin-file" />
+	</platform>
+
+	<platform name="ios">
+		<config-file parent="/*" target="config.xml">
+			<feature name="NativeCamera">
+				<param name="ios-package" value="NativeCamera" />
+			</feature>
+		</config-file>
+
+	    <preference name="CAMERA_USAGE_DESCRIPTION" default=" " />
+	    <preference name="MICROPHONE_USAGE_DESCRIPTION" default=" " />
+	    <config-file target="*-Info.plist" parent="NSCameraUsageDescription">
+	      <string>$CAMERA_USAGE_DESCRIPTION</string>
+	    </config-file>
+	    <config-file target="*-Info.plist" parent="NSMicrophoneUsageDescription">
+	      <string>$MICROPHONE_USAGE_DESCRIPTION</string>
+	    </config-file>
+
+	    <source-file src="src/ios/NativeCamera.m" />
+
+		<js-module name="NativeCamera" src="www/index-ios.js">
+			<clobbers target="cordova.plugins.NativeCamera" />
+		</js-module>
+	</platform>
+</plugin>
