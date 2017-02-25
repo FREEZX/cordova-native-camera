@@ -52,14 +52,10 @@
 @implementation NativeCamera
 -(void) pluginInitialize{
     self.webView.backgroundColor = [UIColor clearColor];
-    self.webView.layer.backgroundColor = [[UIColor clearColor] CGColor];
-    NSArray<CALayer*> *layers = self.webView.layer.sublayers;
-    
-    for(int i=0; i<layers.count; ++i) {
-        layers[i].backgroundColor = [[UIColor clearColor] CGColor];
-    }
+    self.webView.opaque = false;
     
     previewLayer = [AVCaptureVideoPreviewLayer new];
+    previewLayer.zPosition = -10;
     previewLayer.frame = [[UIScreen mainScreen] bounds];
     previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
 }
