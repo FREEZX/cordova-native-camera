@@ -4,11 +4,11 @@ var mediaDevices = {
 };
 var retreivedDevices = false;
 
-exports._currentStream = null;
-exports._mediaRecorder = null;
-exports._fileWriter = null;
-exports._fileEntry = null;
-var writeBuffer = [];
+var _currentStream = null;
+var _mediaRecorder = null;
+var _fileWriter = null;
+var _fileEntry = null;
+var _writeBuffer = [];
 
 var isWriting = false;
 
@@ -18,8 +18,8 @@ exports.Position = {
     UNSPECIFIED: 2
 };
 
-exports.video = null;
-exports.canvas = null;
+var _video = null;
+var _canvas = null;
 exports.size = {
     width: 0,
     height: 0
@@ -52,31 +52,42 @@ function b64toBlob(b64Data, contentType, sliceSize) {
     return blob;
 }
 
-exports._attemptWriting = function() {
-    console.log(exports._fileWriter.readyState);
-    if(writeBuffer.length>0 && exports._fileWriter.readyState!==1) {
-        console.log('writing');
-        exports._fileWriter.write(writeBuffer.shift());
+var _attemptWriting = function() {
+    if(!_fileWriter) {
+        return;
     }
+    if(_writeBuffer.length>0 && _fileWriter.readyState!==1) {
+        _fileWriter.write(_writeBuffer.shift());
+    }
+};
+
+var _initMediaRecorder = function() {
+    _mediaRecorder = new MediaRecorder(_currentStream);
+    _mediaRecorder.ondataavailable = function(e) {
+        if(e.data.size){
+            _writeBuffer.push(e.data);
+            _attemptWriting();
+        }
+    };
+
+    _mediaRecorder.start(100);
 };
 
 exports.showVideo = function(side) {
     if(!isInitialized) {
-        exports.video = document.getElementById('camera-video');
-        exports.canvas = document.createElement('CANVAS');
+        _video = document.getElementById('camera-video');
+        _canvas = document.createElement('CANVAS');
 
-        exports.video.addEventListener('canplay', function(ev) {
-            exports.size.width = exports.video.videoWidth;
-            exports.size.height = exports.video.videoHeight;
-            exports.canvas.setAttribute('width', exports.size.width);
-            exports.canvas.setAttribute('height', exports.size.height);
+        _video.addEventListener('canplay', function(ev) {
+            exports.size.width = _video.videoWidth;
+            exports.size.height = _video.videoHeight;
+            _canvas.setAttribute('width', exports.size.width);
+            _canvas.setAttribute('height', exports.size.height);
         });
         // context = canvas.getContext("2d");
         isInitialized = true;
     }
     cordova.plugins.diagnostic.requestRuntimePermissions(function(status) {
-        console.log(status);
-
         function doVideo() {
             side = side % mediaDevices.video.length;
             currentVideoStreamIdx = side;
@@ -86,17 +97,20 @@ exports.showVideo = function(side) {
                 video: {
                     deviceId: {
                         exact: mediaDevices.video[side].deviceId
-                    }
+                    },
+                    width: 1280,
+                    height: 720,
+                    frameRate: {ideal: 30, max: 60}
                 }
             };
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(function(stream){
-                    exports._currentStream = stream;
-                    if(exports._mediaRecorder) {
-                        exports.initMediaRecorder();
+                    _currentStream = stream;
+                    if(_mediaRecorder) {
+                        _initMediaRecorder();
                     }
                     
-                    exports.video.src = URL.createObjectURL(stream);
+                    _video.src = URL.createObjectURL(stream);
                 });
         }
 
@@ -105,7 +119,6 @@ exports.showVideo = function(side) {
                 .then(function(devices){
                     for(var i=0; i<devices.length; ++i){
                         if(devices[i].kind === 'videoinput') {
-                            console.log(devices[i]);
                             mediaDevices.video.push(devices[i]);
                         } else if(devices[i].kind === 'audioinput') {
                             mediaDevices.audio.push(devices[i]);
@@ -127,58 +140,45 @@ exports.showVideo = function(side) {
 };
 
 exports.removeVideo = function() {
-    exports.video.src = '';
-};
-
-exports.initMediaRecorder = function() {
-    exports._mediaRecorder = new MediaRecorder(exports._currentStream);
-    exports._mediaRecorder.ondataavailable = function(e) {
-        if(e.data.size){
-            console.log('pushing: '+e.data.size);
-            writeBuffer.push(e.data);
-            exports._attemptWriting();
-            // exports._fileWriter.write(e.data);
-        }
-    };
-
-    exports._mediaRecorder.start(100);
+    _video.src = '';
 };
 
 exports.startRecording = function(success) {
-    window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function (dirEntry) {
+    window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function (dirEntry) {
         var timestamp = Math.round((new Date()).getTime() / 1000);
         var _filename = 'culp_'+timestamp+'.webm';
 
         dirEntry.getFile(_filename, {create: true, exclusive: false}, function(fileEntry) {
-            exports._fileEntry = fileEntry;
+            _fileEntry = fileEntry;
             fileEntry.createWriter(function(fileWriter) {
                 fileWriter.onwriteend = function() {
-                    exports._attemptWriting();
-                	if(writeBuffer.length === 0 && exports._mediaRecorder.state !== 'recording') {
+                    if(_writeBuffer.length > 0) {
+                        _attemptWriting();
+                    }
+                	else if(_mediaRecorder.state !== 'recording') {
                 		success(_filename);
                 	}
                 };
-                exports._fileWriter = fileWriter;
-                exports.initMediaRecorder();
+                _fileWriter = fileWriter;
+                _initMediaRecorder();
             });
         });
     });
 };
 
 exports.stopRecording = function() {
-    exports._mediaRecorder.stop();
-    exports._mediaRecorder = null;
+    _mediaRecorder.stop();
 };
 
 exports.takePhoto = function(success) {
-    var context = exports.canvas.getContext('2d');
+    var context = _canvas.getContext('2d');
 
-    exports.canvas.width = exports.size.width;
-    exports.canvas.height = exports.size.height;
+    _canvas.width = exports.size.width;
+    _canvas.height = exports.size.height;
 
-    context.drawImage(exports.video, 0, 0, exports.size.width, exports.size.height);
+    context.drawImage(_video, 0, 0, exports.size.width, exports.size.height);
     
-    var photoUrl = exports.canvas.toDataURL('image/jpeg', 0.85);
+    var photoUrl = _canvas.toDataURL('image/jpeg', 0.85);
     var block = photoUrl.split(";");
 
     var dataType = block[0].split(":")[1];// In this case "image/png"
