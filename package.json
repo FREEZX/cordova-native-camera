@@ -1,6 +1,6 @@
 {
   "name": "cordova-native-camera",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Preview native camera within your cordova app",
   "main": "index.js",
   "scripts": {
@@ -8,14 +8,14 @@
     "watch": "webpack --watch"
   },
   "keywords": [
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios",
     "cordova",
     "native",
     "camera",
     "preview"
   ],
   "author": "Kristijan Trajkovski <kiko_trajkovski@hotmail.com>",
-  "license": "MIT",
-  "dependencies": {
-    "webpack": "^2.2.1"
-  }
+  "license": "MIT"
 }
