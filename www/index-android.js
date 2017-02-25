@@ -144,7 +144,7 @@ exports.removeVideo = function() {
 };
 
 exports.startRecording = function(success) {
-    window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function (dirEntry) {
+    window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function (dirEntry) {
         var timestamp = Math.round((new Date()).getTime() / 1000);
         var _filename = 'culp_'+timestamp+'.webm';
 
