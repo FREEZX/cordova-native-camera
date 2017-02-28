@@ -29,10 +29,13 @@
     exportSession.outputURL = exportPathUrl;
     exportSession.outputFileType = AVFileTypeMPEG4;
     exportSession.shouldOptimizeForNetworkUse = true;
+    NSLog(@"%@", exportPath);
 //    [exportSession export]
     [exportSession exportAsynchronouslyWithCompletionHandler:^{
-        NSLog(@"Export complete");
-        exportCallback(exportPath);
+        if(exportSession.error != nil){
+            NSLog(@"%@", exportSession.error.description);
+        }
+        exportCallback(exportFilename);
     }];
 }
 
@@ -101,7 +104,7 @@
 
 
 - (void)startRecording:(CDVInvokedUrlCommand*)command{
-    NSString *destination = [NSString stringWithFormat:@"%@%d", NSTemporaryDirectory(), arc4random_uniform(1000000)];
+    NSString *destination = [NSString stringWithFormat:@"%@/%d.mov", NSTemporaryDirectory(), arc4random_uniform(1000000)];
     NSURL *url = [NSURL fileURLWithPath:destination];
     
     videoRecordingDelegate = [[VideoRecordingDelegate alloc] initWithCallback:^(NSString* output){
